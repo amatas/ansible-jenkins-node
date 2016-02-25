@@ -1,0 +1,22 @@
+import jenkins.model.*
+import hudson.model.*
+import hudson.slaves.*
+
+
+name = "{{ jenkins_node_name }}"
+
+
+Jenkins.instance.addNode(
+  new DumbSlave(
+    name,
+    "{{ jenkins_node_description }}",
+    "{{ jenkins_node_fspath }}",
+    "{{ jenkins_node_executors }}",
+    Node.Mode.NORMAL,
+    "{% for label in jenkins_node_labels %}{{label}} {% endfor %}",
+    new JNLPLauncher(),
+    new RetentionStrategy.Always(),
+    new LinkedList()))
+
+println jenkins.slaves.JnlpSlaveAgentProtocol.SLAVE_SECRET.mac( name )
+

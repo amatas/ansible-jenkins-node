@@ -1,0 +1,75 @@
+---
+
+- name: Waiting for port listening
+  wait_for:
+    host: "{{ jenkins_master_host }}"
+    port: "{{ jenkins_master_port }}"
+  when: not is_docker
+
+- name: Wait for Jenkins to be ready
+  uri:
+    url: "http://{{ jenkins_master_host }}:{{ jenkins_master_port }}/cli/"
+    return_content: yes
+    status_code: "200,403,401,503"
+  register: result
+  until: >
+    ((result.status == 200) or
+    (result.content.find("Authentication required") != -1)) and
+    (result.content.find("Please wait while") == -1)
+  retries: "{{ jenkins_conn_retries }}"
+  delay: "{{ jenkins_conn_delay }}"
+  changed_when: false
+  when: not is_docker
+
+- name: Generate temporary file
+  command: /usr/bin/mktemp
+  register: mktemp
+  become_user: jenkins
+  when: not is_docker
+
+- name: Transfer Groovy script used to create the node
+  template:
+    src: addnode.gy.j2
+    dest: "{{ mktemp.stdout }}"
+    backup: no
+  become_user: jenkins
+  when: not is_docker
+
+- name: Login jenkins-cli at master
+  shell: "java -jar {{ jenkins_cli_jar }} -s http://{{ jenkins_master_host }}:{{ jenkins_master_port }}/ login --username {{ jenkins_admin_credentials[0] }} --password {{ jenkins_admin_credentials[1] }} "
+  become_user: jenkins
+  when: not is_docker
+
+- name: Create node and retrieve the secret
+  shell: "java -jar {{ jenkins_cli_jar }} -s http://{{ jenkins_master_host }}:{{ jenkins_master_port }}/ groovy {{ mktemp.stdout }}"
+  register: jenkins_cli
+  become_user: jenkins
+  when: not is_docker
+
+- name: Set jenkins_node_secret
+  set_fact:
+    jenkins_node_secret: "{{ jenkins_cli.stdout }}"
+  when: not is_docker
+
+- name: Remove Groovy script
+  file:
+    path: "{{ mktemp.stdout }}"
+    state: absent
+  when: not is_docker
+
+- name: Save Jenkins node config
+  template:
+    src: sysconfig.j2
+    dest: /etc/sysconfig/jenkins-node
+    backup: no
+
+- name: Set Jenkins node service
+  template:
+    src: jenkins.service.j2
+    dest: /usr/lib/systemd/system/jenkins-node.service
+  when: not is_docker
+
+- name: Reload Systemd
+  command: systemctl daemon-reload
+  when: not is_docker
+

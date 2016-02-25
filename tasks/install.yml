@@ -1,0 +1,23 @@
+---
+
+- name: Add jenkins user
+  user:
+    name: "{{ jenkins_node_user }}"
+    home: "{{ jenkins_node_fspath }}"
+    state: present
+
+- name: Create Jenkins directory for holding JARs
+  file:
+    path: "{{ jenkins_jar_directory}}"
+    state: directory
+    owner: root
+    group: root
+  
+- name: Download JARs
+  get_url:
+    url: "http://{{ jenkins_master_host | mandatory }}:{{ jenkins_master_port }}/{{ item }}"
+    dest: "{{ jenkins_jar_directory }}"
+  with_items:
+    - "/jnlpJars/jenkins-cli.jar"
+    - "/jnlpJars/slave.jar"
+

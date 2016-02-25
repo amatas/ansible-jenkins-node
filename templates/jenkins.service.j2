@@ -1,0 +1,26 @@
+[Unit]
+Description=Extendable continuous integration server
+After=network.target
+
+[Service]
+User={{ jenkins_node_user }}
+Type=simple
+EnvironmentFile=/etc/sysconfig/jenkins-node
+ExecStart={{ jenkins_java_cmd }} -jar {{ jenkins_slave_jar }} -jnlpUrl $JENKINS_JNLP_URL -secret $JENKINS_NODE_SECRET
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=jenkins-node
+#MemoryLimit=768M
+OOMScoreAdjust=-1000
+LimitCPU=infinity
+LimitFSIZE=infinity
+LimitDATA=infinity
+LimitCORE=0
+LimitAS=infinity
+LimitLOCKS=infinity
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+
