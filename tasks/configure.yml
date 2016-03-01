@@ -51,6 +51,19 @@
     jenkins_node_secret: "{{ jenkins_cli.stdout }}"
   when: not is_docker
 
+- name: Store secret in some files
+  lineinfile:
+    dest: "/etc/jenkins/win10_node_secret.conf"
+    line: "JENKINS_WIN10_NODE_SECRET='{{ jenkins_node_secret }}'"
+    create: yes
+    state: present
+
+- name: Store win10 script
+  copy:
+    src: set-jenkins-win10-node-secret.sh
+    dest: "{{ jenkins_jar_directory }}/set-jenkins-win10-node-secret.sh"
+    owner: "{{ jenkins_node_user  }}"
+
 - name: Remove Groovy script
   file:
     path: "{{ mktemp.stdout }}"
