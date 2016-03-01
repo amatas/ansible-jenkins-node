@@ -1,5 +1,10 @@
 ---
 
+- name: Install Java vm (OpenJDK8)
+  yum:
+    name: java-1.8.0-openjdk-headless.x86_64
+    state: latest
+
 - name: Add jenkins user
   user:
     name: "{{ jenkins_node_user }}"
@@ -12,7 +17,7 @@
     state: directory
     owner: root
     group: root
-  
+
 - name: Download JARs
   get_url:
     url: "http://{{ jenkins_master_host | mandatory }}:{{ jenkins_master_port }}/{{ item }}"
