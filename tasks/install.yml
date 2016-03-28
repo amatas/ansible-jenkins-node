@@ -18,6 +18,12 @@
     owner: root
     group: root
 
+- name: Waiting for port listening
+  wait_for:
+    host: "{{ jenkins_master_host }}"
+    port: "{{ jenkins_master_port }}"
+  when: not is_docker
+
 - name: Download JARs
   get_url:
     url: "http://{{ jenkins_master_host | mandatory }}:{{ jenkins_master_port }}/{{ item }}"
