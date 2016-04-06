@@ -4,6 +4,7 @@
   wait_for:
     host: "{{ jenkins_master_host }}"
     port: "{{ jenkins_master_port }}"
+    timeout: 600
   when: not is_docker
 
 - name: Wait for Jenkins to be ready
